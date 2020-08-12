@@ -2,7 +2,7 @@ let createError = require('http-errors');
 let express = require('express');
 let path = require('path');
 let session = require('express-session');
-// let redis = require('redis');
+let redis = require('redis');
 let logger = require('morgan');
 let sassMiddleware = require('node-sass-middleware');
 
@@ -20,8 +20,8 @@ app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// let RedisStore = require('connect-redis')(session);
-// let redisClient = redis.createClient();
+let RedisStore = require('connect-redis')(session);
+let redisClient = redis.createClient();
 
 // Dangerous!!
 // Since version 1.5.0, the cookie-parser middleware no longer
@@ -29,7 +29,7 @@ app.use(express.urlencoded({ extended: false }));
 //  reads and writes cookies on req/res. Using cookie-parser may result
 //  in issues if the secret is not the same between this module and cookie-parser.
 app.use(session({
-  // store: new RedisStore({ client: redisClient }),
+  store: new RedisStore({ client: redisClient }),
   secret: 'keyboard cat',
   resave: false,
   saveUninitialized: true,
