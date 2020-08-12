@@ -82,3 +82,10 @@ If login within any of the domain, then it works between domains.
 
 > Notice that, example session maxAge=15 seconds.
 
+## FAQ
+
+### cookie-parser middleware is dangerous
+
+for ExpressJS, Since version 1.5.0, the [*cookie-parser middleware*](https://www.npmjs.com/package/cookie-parser) no longer needs to be used for this module to work. This module now directly reads and writes cookies on `req`/`res`. Using `cookie-parser` may result in issues if the `secret` is not the same between this module and `cookie-parser`.
+               
+This example doesn't use *cookie-parser middleware*
