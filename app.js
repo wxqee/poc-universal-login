@@ -1,14 +1,16 @@
-var createError = require('http-errors');
-var express = require('express');
-var path = require('path');
-var cookieParser = require('cookie-parser');
-var logger = require('morgan');
-var sassMiddleware = require('node-sass-middleware');
+let createError = require('http-errors');
+let express = require('express');
+let path = require('path');
+let session = require('express-session');
+// let redis = require('redis');
+let logger = require('morgan');
+let sassMiddleware = require('node-sass-middleware');
 
-var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users');
+let indexRouter = require('./routes/index');
+let usersRouter = require('./routes/users');
+let authRouter = require('./routes/auth');
 
-var app = express();
+let app = express();
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -17,7 +19,36 @@ app.set('view engine', 'hbs');
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser());
+
+// let RedisStore = require('connect-redis')(session);
+// let redisClient = redis.createClient();
+
+// Dangerous!!
+// Since version 1.5.0, the cookie-parser middleware no longer
+//  needs to be used for this module to work. This module now directly
+//  reads and writes cookies on req/res. Using cookie-parser may result
+//  in issues if the secret is not the same between this module and cookie-parser.
+app.use(session({
+  // store: new RedisStore({ client: redisClient }),
+  secret: 'keyboard cat',
+  resave: false,
+  saveUninitialized: true,
+  cookie: {
+    secure: (function() {
+      if (app.get('env') === 'production') {
+        app.set('trust proxy', 1) // trust first proxy
+        return true;
+      }
+
+      return false;
+    })(),
+    // session cookie expires after 15 seconds from now on
+    maxAge: 1000 * 15, // 15 seconds // 1000 * 60 * 60 * 24 * 30 // 30 days (in milliseconds)
+    // .beepit.loc universal login
+    domain: '.beepit.loc',
+  }
+}));
+
 app.use(sassMiddleware({
   src: path.join(__dirname, 'public'),
   dest: path.join(__dirname, 'public'),
@@ -26,8 +57,23 @@ app.use(sassMiddleware({
 }));
 app.use(express.static(path.join(__dirname, 'public')));
 
+// customized auth
+app.use(function (req, res, next) {
+  const user = req.session.user;
+
+  // for view
+  console.debug('session.user = %j', req.session.user);
+  if (user) {
+    res.locals.user = user
+    res.locals.userId = user._id
+  }
+
+  next();
+});
+
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
+app.use('/auth', authRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

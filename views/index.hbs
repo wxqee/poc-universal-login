@@ -1,3 +1,10 @@
 <h1>{{title}}</h1>
-<p>Welcome to {{title}}</p>
+<p>
+  Welcome to {{title}}
+  {{#if userId}}
+    , {{user.username}}
+  {{else}}
+    <a href="/auth/login">Login</a>
+  {{/if}}
+</p>
 <p><code>nodemon</code> works now.</p>
