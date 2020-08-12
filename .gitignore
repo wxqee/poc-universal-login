@@ -1,1 +1,4 @@
 node_modules/
+.idea/
+public/stylesheets/*.css
+public/stylesheets/*.css.map
