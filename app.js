@@ -1,6 +1,7 @@
 let createError = require('http-errors');
 let express = require('express');
 let path = require('path');
+let cookieParser = require('cookie-parser');
 let session = require('express-session');
 let redis = require('redis');
 let logger = require('morgan');
@@ -28,9 +29,12 @@ let redisClient = redis.createClient();
 //  needs to be used for this module to work. This module now directly
 //  reads and writes cookies on req/res. Using cookie-parser may result
 //  in issues if the secret is not the same between this module and cookie-parser.
+const cookieSecret = 'keyboard cat';
+
 app.use(session({
+  name: "beepit.sid",
   store: new RedisStore({ client: redisClient }),
-  secret: 'keyboard cat',
+  secret: `${cookieSecret} abc`,
   resave: false,
   saveUninitialized: true,
   cookie: {
@@ -43,11 +47,13 @@ app.use(session({
       return false;
     })(),
     // session cookie expires after 15 seconds from now on
-    maxAge: 1000 * 15, // 15 seconds // 1000 * 60 * 60 * 24 * 30 // 30 days (in milliseconds)
+    // maxAge: 1000 * 60 * 60 * 24 * 30, // 30 days (in milliseconds)
+    maxAge: 60 * 1000, // 60 seconds
     // .beepit.loc universal login
     domain: '.beepit.loc',
   }
 }));
+app.use(cookieParser(cookieSecret));
 
 app.use(sassMiddleware({
   src: path.join(__dirname, 'public'),
@@ -67,6 +73,9 @@ app.use(function (req, res, next) {
     res.locals.user = user
     res.locals.userId = user._id
   }
+
+  console.debug('cookie beepit.h = %j', req.cookies['beepit.h']);
+  res.cookie('beepit.h', `${req.host}-123abc`);
 
   next();
 });
